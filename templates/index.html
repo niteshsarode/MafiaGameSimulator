@@ -372,6 +372,11 @@
                 this.updatePhaseIndicator();
                 this.updateStatistics();
                 this.updatePlayerGrid();
+                this.updateTurnInfo();
+                
+                // Update next turn button
+                const nextBtn = document.getElementById('nextTurnBtn');
+                nextBtn.disabled = !newState.can_advance;
                 
                 // Log significant changes
                 if (previousState) {
@@ -387,6 +392,7 @@
                 if (newState.is_game_over && !newState.game_running) {
                     this.stopPolling();
                     this.addLogEntry('Game', `Game Over! Winner: ${newState.winner}`);
+                    nextBtn.disabled = true;
                 }
             }
             
@@ -491,6 +497,53 @@
                 });
             }
             
+            updateTurnInfo() {
+                const turnInfo = document.getElementById('currentTurnInfo');
+                const turnDetails = document.getElementById('turnDetails');
+                
+                if (!this.gameState || !this.gameState.current_turn || Object.keys(this.gameState.current_turn).length === 0) {
+                    turnInfo.style.display = 'none';
+                    return;
+                }
+                
+                turnInfo.style.display = 'block';
+                const turnData = this.gameState.current_turn;
+                
+                let html = `
+                    <div class="turn-info">
+                        <h5>Phase: ${turnData.phase || 'Unknown'}</h5>
+                        <p><strong>Round:</strong> ${turnData.round || 0}</p>
+                `;
+                
+                if (turnData.narrative) {
+                    html += `<p><strong>Narrative:</strong> ${turnData.narrative}</p>`;
+                }
+                
+                if (turnData.actions) {
+                    html += '<h6>Actions:</h6><ul>';
+                    for (const [action, target] of Object.entries(turnData.actions)) {
+                        if (target) {
+                            html += `<li><strong>${action.replace('_', ' ')}:</strong> ${target}</li>`;
+                        }
+                    }
+                    html += '</ul>';
+                }
+                
+                if (turnData.results && Object.keys(turnData.results).length > 0) {
+                    html += '<h6>Results:</h6><ul>';
+                    for (const [key, value] of Object.entries(turnData.results)) {
+                        if (value !== null && value !== undefined) {
+                            const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
+                            html += `<li><strong>${key.replace('_', ' ')}:</strong> ${displayValue}</li>`;
+                        }
+                    }
+                    html += '</ul>';
+                }
+                
+                html += '</div>';
+                turnDetails.innerHTML = html;
+            }
+
             addLogEntry(source, message, type = 'info') {
                 const gameLog = document.getElementById('gameLog');
                 const logEntry = document.createElement('div');
@@ -515,6 +568,10 @@
         // Global functions
         function startGame() {
             gameInterface.startGame();
+        }
+        
+        function nextTurn() {
+            gameInterface.nextTurn();
         }
         
         function refreshGameState() {
