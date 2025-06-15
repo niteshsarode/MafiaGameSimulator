@@ -96,17 +96,33 @@ class TurnBasedMafiaGame:
         # Get narrative
         night_narrative = await narrator.announce_night_results(night_result)
         
-        # Store turn data
+        # Store turn data with enhanced details
+        living_players = [p.name for p in game.get_living_players()]
+        dead_players = [p.name for p in game.get_dead_players()]
+        
         self.current_turn_data = {
             "phase": "night",
             "round": game.current_round - 1,  # Round increments after night
+            "living_players": living_players,
+            "dead_players": dead_players,
             "actions": {
                 "mafia_target": mafia_target,
                 "doctor_save": doctor_save,
                 "detective_investigation": detective_investigation
             },
             "results": night_result,
-            "narrative": night_narrative
+            "narrative": night_narrative,
+            "game_state": {
+                "last_night_actions": {
+                    "round": game.current_round - 1,
+                    "mafia_target": mafia_target,
+                    "doctor_save": doctor_save,
+                    "detective_investigation": detective_investigation,
+                    "results": night_result
+                },
+                "phase": "night",
+                "round": game.current_round - 1
+            }
         }
         
         self.game_history.append(self.current_turn_data.copy())
@@ -143,16 +159,47 @@ class TurnBasedMafiaGame:
             votes, elimination_result
         )
         
-        # Store turn data
+        # Store turn data with enhanced details
+        living_players = [p.name for p in game.get_living_players()]
+        dead_players = [p.name for p in game.get_dead_players()]
+        
+        # Parse discussions into individual player statements
+        discussions = []
+        if discussion_summary:
+            # Split discussion by newlines and parse each statement
+            statements = discussion_summary.strip().split('\n')
+            for statement in statements:
+                if ':' in statement:
+                    player_name, message = statement.split(':', 1)
+                    player_name = player_name.strip()
+                    message = message.strip()
+                    
+                    # Find the player to get their role
+                    player = next((p for p in game.players if p.name == player_name), None)
+                    if player and message:
+                        discussions.append({
+                            "player_name": player_name,
+                            "player_role": player.role.value if player.role else "unknown",
+                            "message": message
+                        })
+        
         self.current_turn_data = {
             "phase": "day",
             "round": game.current_round - 1,  # Round increments after day
+            "living_players": living_players,
+            "dead_players": dead_players,
+            "discussions": discussions,
             "actions": {
                 "discussion": discussion_summary,
                 "votes": votes
             },
             "results": elimination_result,
-            "narrative": voting_narrative
+            "narrative": voting_narrative,
+            "game_state": {
+                "current_votes": votes,
+                "phase": "day",
+                "round": game.current_round - 1
+            }
         }
         
         self.game_history.append(self.current_turn_data.copy())
@@ -210,7 +257,7 @@ class TurnBasedMafiaGame:
         return {
             **base_state,
             "current_turn": self.current_turn_data,
-            "game_history": self.game_history[-5:],  # Last 5 turns
+            "game_history": self.game_history,  # Full game history
             "can_advance": self.game_initialized and not base_state["is_game_over"]
         }
     
