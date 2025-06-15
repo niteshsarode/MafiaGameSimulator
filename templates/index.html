@@ -645,7 +645,23 @@
                     html += '<h6>Actions:</h6><ul>';
                     for (const [action, target] of Object.entries(turnData.actions)) {
                         if (target) {
-                            html += `<li><strong>${action.replace('_', ' ')}:</strong> ${target}</li>`;
+                            let displayValue;
+                            if (action.toLowerCase().includes('vote') && typeof target === 'object' && target !== null) {
+                                // Handle vote objects
+                                const entries = Object.entries(target);
+                                if (entries.length > 0) {
+                                    displayValue = entries.map(([playerName, voteCount]) => 
+                                        `${playerName}: ${voteCount} vote${voteCount > 1 ? 's' : ''}`
+                                    ).join(', ');
+                                } else {
+                                    displayValue = 'No votes cast';
+                                }
+                            } else if (typeof target === 'object') {
+                                displayValue = JSON.stringify(target);
+                            } else {
+                                displayValue = target;
+                            }
+                            html += `<li><strong>${action.replace('_', ' ')}:</strong> ${displayValue}</li>`;
                         }
                     }
                     html += '</ul>';
@@ -657,7 +673,7 @@
                         if (value !== null && value !== undefined) {
                             let displayValue;
                             // Special handling for votes to prevent [object Object]
-                            if (key.toLowerCase().includes('vote') && typeof value === 'object' && value !== null) {
+                            if (key.toLowerCase().includes('votes') && typeof value === 'object' && value !== null) {
                                 console.log('Formatting votes:', key, value); // Debug log
                                 if (Array.isArray(value)) {
                                     displayValue = value.length > 0 ? value.join(', ') : 'No votes';
