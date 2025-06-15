@@ -25,7 +25,7 @@ class BaseAgent:
         if api_key and api_key != "test_key":
             try:
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-pro')
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
                 self.use_ai = True
             except Exception as e:
                 logger.warning(f"Failed to configure Gemini API: {e}")

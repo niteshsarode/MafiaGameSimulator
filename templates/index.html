@@ -665,8 +665,9 @@
                                     try {
                                         const entries = Object.entries(value);
                                         if (entries.length > 0) {
-                                            displayValue = entries.map(([voter, target]) => 
-                                                `${voter} → ${target}`
+                                            // This is vote counts: {playerName: voteCount}
+                                            displayValue = entries.map(([playerName, voteCount]) => 
+                                                `${playerName}: ${voteCount} vote${voteCount > 1 ? 's' : ''}`
                                             ).join(', ');
                                         } else {
                                             displayValue = 'No votes cast';

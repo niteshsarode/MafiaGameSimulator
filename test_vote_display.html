@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vote Display Test</title>
+</head>
+<body>
+    <div id="test-results"></div>
+    <div id="vote-display-test"></div>
+
+    <script>
+        // Mock game state with players
+        const mockGameState = {
+            players: [
+                { id: 1, name: "Alice" },
+                { id: 2, name: "Bob" },
+                { id: 3, name: "Charlie" },
+                { id: 4, name: "Diana" }
+            ]
+        };
+
+        // Test vote formatting function
+        function formatVotes(key, value, gameState) {
+            let displayValue;
+            if (key.toLowerCase().includes('vote') && typeof value === 'object' && value !== null) {
+                if (Array.isArray(value)) {
+                    displayValue = value.length > 0 ? value.join(', ') : 'No votes';
+                } else {
+                    try {
+                        const entries = Object.entries(value);
+                        if (entries.length > 0) {
+                            // Convert player IDs to names using the game state
+                            displayValue = entries.map(([voter, targetId]) => {
+                                let targetName = targetId;
+                                // Try to find player name by ID
+                                if (gameState && gameState.players) {
+                                    const targetPlayer = gameState.players.find(p => p.id == targetId);
+                                    if (targetPlayer) {
+                                        targetName = targetPlayer.name;
+                                    }
+                                }
+                                return `${voter} → ${targetName}`;
+                            }).join(', ');
+                        } else {
+                            displayValue = 'No votes cast';
+                        }
+                    } catch (e) {
+                        displayValue = `Vote data: ${JSON.stringify(value)}`;
+                    }
+                }
+            } else {
+                displayValue = JSON.stringify(value);
+            }
+            return displayValue;
+        }
+
+        // Test cases
+        const testCases = [
+            {
+                name: "Vote with player IDs",
+                key: "votes",
+                value: {"Alice": 1, "Bob": 3, "Charlie": 2},
+                expected: "Alice → Alice, Bob → Charlie, Charlie → Bob"
+            },
+            {
+                name: "Empty votes object",
+                key: "votes",
+                value: {},
+                expected: "No votes cast"
+            },
+            {
+                name: "Array votes",
+                key: "votes", 
+                value: ["Alice", "Bob"],
+                expected: "Alice, Bob"
+            },
+            {
+                name: "Non-vote object",
+                key: "results",
+                value: {"eliminated": "Alice"},
+                expected: '{"eliminated":"Alice"}'
+            }
+        ];
+
+        let resultsHtml = '<h2>Vote Display Unit Tests</h2>';
+        let allPassed = true;
+
+        testCases.forEach((test, index) => {
+            const result = formatVotes(test.key, test.value, mockGameState);
+            const passed = result === test.expected;
+            allPassed = allPassed && passed;
+            
+            resultsHtml += `
+                <div style="margin: 10px 0; padding: 10px; border: 1px solid ${passed ? 'green' : 'red'};">
+                    <h3>Test ${index + 1}: ${test.name}</h3>
+                    <p><strong>Input:</strong> ${JSON.stringify(test.value)}</p>
+                    <p><strong>Expected:</strong> ${test.expected}</p>
+                    <p><strong>Got:</strong> ${result}</p>
+                    <p><strong>Status:</strong> ${passed ? 'PASS' : 'FAIL'}</p>
+                </div>
+            `;
+        });
+
+        resultsHtml += `<h2>Overall Result: ${allPassed ? 'ALL TESTS PASSED' : 'SOME TESTS FAILED'}</h2>`;
+        document.getElementById('test-results').innerHTML = resultsHtml;
+
+        // Display current vote formatting issue
+        const problemVotes = {"Alice":1,"Diana":3,"Eve":1,"Grace":2};
+        const formattedProblem = formatVotes("votes", problemVotes, mockGameState);
+        document.getElementById('vote-display-test').innerHTML = `
+            <h2>Current Problem Vote Data</h2>
+            <p><strong>Raw data:</strong> ${JSON.stringify(problemVotes)}</p>
+            <p><strong>Formatted:</strong> ${formattedProblem}</p>
+        `;
+    </script>
+</body>
+</html>
