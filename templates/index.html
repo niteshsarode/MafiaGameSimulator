@@ -249,6 +249,152 @@
         #currentTurnInfo h4 {
             color: #333 !important;
         }
+        
+        /* Round history styles */
+        .round-accordion {
+            margin-bottom: 15px;
+        }
+        
+        .round-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .round-header:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .round-header.collapsed {
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .round-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .round-summary {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .round-toggle {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .round-toggle.collapsed {
+            transform: rotate(180deg);
+        }
+        
+        .round-content {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .discussion-container {
+            margin: 15px 0;
+        }
+        
+        .discussion-entry {
+            background: rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #667eea;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        
+        .discussion-entry:hover {
+            background: rgba(0, 0, 0, 0.08);
+            transform: translateX(2px);
+        }
+        
+        .discussion-player {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .discussion-player .role-badge {
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        
+        .discussion-player .role-badge.mafia {
+            background: #dc3545;
+        }
+        
+        .discussion-player .role-badge.doctor {
+            background: #28a745;
+        }
+        
+        .discussion-player .role-badge.detective {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .discussion-text {
+            color: #495057;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+        
+        .vote-summary {
+            background: rgba(108, 117, 125, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .vote-summary h6 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .vote-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .vote-item:last-child {
+            border-bottom: none;
+        }
+        
+        .vote-count {
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -330,6 +476,16 @@
                                 <!-- Turn details will be populated here -->
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game History Section -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h3><i class="fas fa-history"></i> Game History</h3>
+                    <div id="gameHistory" class="accordion">
+                        <!-- Game rounds will be displayed here as collapsible items -->
                     </div>
                 </div>
             </div>
@@ -458,6 +614,7 @@
                 this.updateStatistics();
                 this.updatePlayerGrid();
                 this.updateTurnInfo();
+                this.updateGameHistory();
                 
                 // Update next turn button
                 const nextBtn = document.getElementById('nextTurnBtn');
