@@ -405,6 +405,11 @@
             updateStatusIndicator() {
                 const statusElement = document.getElementById('gameStatus');
                 
+                if (!statusElement) {
+                    console.error('Status element not found');
+                    return;
+                }
+                
                 if (!this.gameState) {
                     statusElement.className = 'status-indicator idle';
                     statusElement.innerHTML = '<i class="fas fa-circle"></i> Ready';
@@ -424,6 +429,11 @@
                 const phaseText = document.getElementById('phaseText');
                 const roundText = document.getElementById('roundText');
                 const phaseIndicator = document.getElementById('phaseIndicator');
+                
+                if (!phaseText || !roundText || !phaseIndicator) {
+                    console.error('Phase indicator elements not found');
+                    return;
+                }
                 
                 if (!this.gameState) {
                     phaseText.textContent = 'Ready to Start Game';
@@ -456,14 +466,29 @@
             updateStatistics() {
                 if (!this.gameState) return;
                 
-                document.getElementById('livingCount').textContent = this.gameState.living_count || 0;
-                document.getElementById('mafiaCount').textContent = this.gameState.mafia_count || 0;
-                document.getElementById('townCount').textContent = this.gameState.town_count || 0;
-                document.getElementById('roundCount').textContent = this.gameState.round || 0;
+                const livingCount = document.getElementById('livingCount');
+                const mafiaCount = document.getElementById('mafiaCount');
+                const townCount = document.getElementById('townCount');
+                const roundCount = document.getElementById('roundCount');
+                
+                if (!livingCount || !mafiaCount || !townCount || !roundCount) {
+                    console.error('Statistics elements not found');
+                    return;
+                }
+                
+                livingCount.textContent = this.gameState.living_count || 0;
+                mafiaCount.textContent = this.gameState.mafia_count || 0;
+                townCount.textContent = this.gameState.town_count || 0;
+                roundCount.textContent = this.gameState.round || 0;
             }
             
             updatePlayerGrid() {
                 const playerGrid = document.getElementById('playerGrid');
+                
+                if (!playerGrid) {
+                    console.error('Player grid element not found');
+                    return;
+                }
                 
                 if (!this.gameState || !this.gameState.players) {
                     playerGrid.innerHTML = '<div class="text-center">No players loaded</div>';
@@ -475,6 +500,12 @@
             
             renderPlayers(players) {
                 const playerGrid = document.getElementById('playerGrid');
+                
+                if (!playerGrid) {
+                    console.error('Player grid element not found in renderPlayers');
+                    return;
+                }
+                
                 playerGrid.innerHTML = '';
                 
                 players.forEach(player => {
