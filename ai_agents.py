@@ -430,13 +430,18 @@ Who do you choose to save tonight?"""
     async def participate_in_discussion(self, living_players: List[Player],
                                         game_state: Dict[str, Any]) -> str:
         """Participate in discussion while hiding role"""
-        system_message = f"""You are {self.player.name}, the Doctor, but you must hide your role. Act like a concerned townsperson while subtly protecting the town. Support logical analysis and protect suspected special roles indirectly. Keep your response to maximum 4 sentences and avoid suspicion."""
+        voting_history = self.build_voting_history_context(game_state)
+        
+        system_message = f"""You are {self.player.name}, the Doctor, but you must hide your role. Act like a concerned townsperson while subtly protecting the town. Use voting patterns to identify threats to town and special roles. Support logical analysis and protect suspected special roles indirectly. Keep your response to maximum 4 sentences and avoid suspicion."""
 
         context = f"""Game state: {game_state}
 Your hidden role: Doctor
 Recent observations: {self.memory[-3:] if self.memory else 'None'}
 
-What do you say in the discussion?"""
+Previous voting history and patterns:
+{voting_history}
+
+Based on voting patterns and threats to town, what do you say in the discussion while hiding your role?"""
 
         response = await self.make_llm_request(context, system_message)
 
@@ -450,6 +455,8 @@ What do you say in the discussion?"""
     async def vote_for_elimination(self, living_players: List[Player],
                                    game_state: Dict[str, Any]) -> str:
         """Vote for a player to eliminate while hiding role"""
+        voting_history = self.build_voting_history_context(game_state)
+        
         possible_votes = [
             p for p in living_players if p.name != self.player.name
         ]
@@ -463,6 +470,7 @@ Your strategy:
 - Vote to eliminate suspected Mafia members
 - Don't reveal you're the Doctor
 - Support logical town decisions
+- Use voting patterns to identify Mafia alliances
 
 You can also choose "no_vote" if you're uncertain.
 Respond with only the player's name or "no_vote"."""
@@ -471,7 +479,10 @@ Respond with only the player's name or "no_vote"."""
 Current discussion sentiment: {game_state}
 Your suspicions: {self.suspicions}
 
-Who do you vote to eliminate?"""
+Previous voting history and patterns:
+{voting_history}
+
+Based on voting patterns and protecting town interests, who do you vote to eliminate?"""
 
         try:
             response = await self.make_llm_request(context, system_message)
@@ -579,13 +590,18 @@ Who do you choose to investigate tonight?"""
     async def participate_in_discussion(self, living_players: List[Player],
                                         game_state: Dict[str, Any]) -> str:
         """Participate in discussion using investigation knowledge"""
-        system_message = f"""You are {self.player.name}, the Detective with secret investigation results. Guide the town toward eliminating Mafia. Subtly cast suspicion on confirmed Mafia and defend innocents indirectly using logical reasoning. Keep your response to maximum 4 sentences."""
+        voting_history = self.build_voting_history_context(game_state)
+        
+        system_message = f"""You are {self.player.name}, the Detective with secret investigation results. Guide the town toward eliminating Mafia. Use voting patterns combined with your investigation knowledge to build stronger cases. Subtly cast suspicion on confirmed Mafia and defend innocents indirectly using logical reasoning. Keep your response to maximum 4 sentences."""
 
         context = f"""Game state: {game_state}
 Your secret knowledge: {self.investigation_results}
 Living players: {[p.name for p in living_players]}
 
-How do you subtly guide the discussion?"""
+Previous voting history and patterns:
+{voting_history}
+
+Using your investigation results and voting patterns, how do you subtly guide the discussion toward eliminating Mafia?"""
 
         response = await self.make_llm_request(context, system_message)
 
@@ -599,6 +615,8 @@ How do you subtly guide the discussion?"""
     async def vote_for_elimination(self, living_players: List[Player],
                                    game_state: Dict[str, Any]) -> str:
         """Vote based on investigation results"""
+        voting_history = self.build_voting_history_context(game_state)
+        
         possible_votes = [
             p for p in living_players if p.name != self.player.name
         ]
@@ -615,7 +633,7 @@ How do you subtly guide the discussion?"""
         system_message = f"""You are {self.player.name}, the Detective with secret investigation knowledge. Vote strategically to eliminate Mafia.
 
 Your knowledge: {self.investigation_results}
-Strategy: Vote for most suspicious players, prioritize confirmed Mafia, avoid revealing your role.
+Strategy: Vote for most suspicious players, prioritize confirmed Mafia, use voting patterns to build cases, avoid revealing your role.
 
 You can also choose "no_vote" if you're uncertain.
 Respond with only the player's name or "no_vote"."""
@@ -624,7 +642,10 @@ Respond with only the player's name or "no_vote"."""
 Your investigation results: {self.investigation_results}
 Game state: {game_state}
 
-Who do you vote to eliminate?"""
+Previous voting history and patterns:
+{voting_history}
+
+Using your investigation knowledge and voting patterns, who do you vote to eliminate?"""
 
         try:
             response = await self.make_llm_request(context, system_message)

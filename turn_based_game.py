@@ -139,16 +139,22 @@ class TurnBasedMafiaGame:
         agent_manager = self.simulation.agent_manager
         narrator = self.simulation.narrator
         
+        # Build enhanced game state with history for agents
+        enhanced_game_state = {
+            **game.get_game_state(),
+            'game_history': self.game_history
+        }
+        
         # Conduct discussion
         discussion_summary = await agent_manager.conduct_discussion(
             game.get_living_players(),
-            game.get_game_state()
+            enhanced_game_state
         )
         
         # Conduct voting
         votes = await agent_manager.conduct_voting(
             game.get_living_players(),
-            game.get_game_state()
+            enhanced_game_state
         )
         
         # Process votes
