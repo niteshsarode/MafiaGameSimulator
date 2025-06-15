@@ -263,9 +263,9 @@ Consider:
 - Who has acted most suspiciously?
 - Who has been deflecting or aggressive?
 - Who benefits from recent eliminations?
-- What does your gut tell you?
 
-Respond with only the player's name you want to eliminate."""
+You can also choose "no_vote" if you're uncertain.
+Respond with only the player's name or "no_vote"."""
 
         context = f"""Players to choose from: {possible_votes}
 Your suspicions: {self.suspicions}
@@ -275,6 +275,10 @@ Who do you vote to eliminate?"""
 
         response = await self.make_llm_request(context, system_message)
         
+        # Check for no vote first
+        if "no_vote" in response.lower():
+            return "no_vote"
+            
         # Extract vote from response
         for name in possible_votes:
             if name.lower() in response.lower():
@@ -286,8 +290,9 @@ Who do you vote to eliminate?"""
             if most_suspicious[0] in possible_votes:
                 return most_suspicious[0]
                 
-        # Random fallback
-        return random.choice(possible_votes)
+        # Random fallback including no vote option
+        import random
+        return random.choice(possible_votes + ["no_vote"])
 
 class DoctorAgent(BaseAgent):
     """AI Agent for Doctor role"""
@@ -344,16 +349,7 @@ Who do you choose to save tonight?"""
             
     async def participate_in_discussion(self, living_players: List[Player], game_state: Dict[str, Any]) -> str:
         """Participate in discussion while hiding role"""
-        system_message = f"""You are {self.player.name}, the Doctor, but you must hide your role. Act like a regular townsperson while subtly trying to protect the town.
-
-Your approach:
-- Act like a concerned townsperson
-- Don't reveal your role
-- Support logical analysis
-- Protect suspected special roles indirectly
-- Be helpful but not too prominent
-
-Keep your response natural and avoid suspicion."""
+        system_message = f"""You are {self.player.name}, the Doctor, but you must hide your role. Act like a concerned townsperson while subtly protecting the town. Support logical analysis and protect suspected special roles indirectly. Keep your response to maximum 4 sentences and avoid suspicion."""
 
         context = f"""Game state: {game_state}
 Your hidden role: Doctor
@@ -383,9 +379,9 @@ Your strategy:
 - Vote to eliminate suspected Mafia members
 - Don't reveal you're the Doctor
 - Support logical town decisions
-- Protect the town's interests
 
-Respond with only the player's name."""
+You can also choose "no_vote" if you're uncertain.
+Respond with only the player's name or "no_vote"."""
 
         context = f"""Players you can vote for: {[p.name for p in possible_votes]}
 Current discussion sentiment: {game_state}
@@ -396,18 +392,22 @@ Who do you vote to eliminate?"""
         try:
             response = await self.make_llm_request(context, system_message)
             
+            # Check for no vote first
+            if "no_vote" in response.lower():
+                return "no_vote"
+                
             # Extract vote from response
             for player in possible_votes:
                 if player.name.lower() in response.lower():
                     return player.name
                     
-            # Fallback to random vote
+            # Fallback to random vote or no vote
             import random
-            return random.choice(possible_votes).name
+            return random.choice([p.name for p in possible_votes] + ["no_vote"])
         except Exception as e:
             logger.error(f"Error in doctor voting: {e}")
             import random
-            return random.choice(possible_votes).name
+            return random.choice([p.name for p in possible_votes] + ["no_vote"])
 
 class DetectiveAgent(BaseAgent):
     """AI Agent for Detective role"""
@@ -478,21 +478,7 @@ Who do you choose to investigate tonight?"""
             
     async def participate_in_discussion(self, living_players: List[Player], game_state: Dict[str, Any]) -> str:
         """Participate in discussion using investigation knowledge"""
-        system_message = f"""You are {self.player.name}, the Detective with secret investigation results. You must guide the town toward eliminating Mafia without revealing your role.
-
-Your knowledge:
-- Investigation results: {self.investigation_results}
-- You know who is innocent and who is Mafia
-- You must subtly influence votes without being obvious
-- If you reveal your role, you become a target
-
-Strategy:
-- Subtly cast suspicion on confirmed Mafia
-- Defend confirmed innocents indirectly
-- Use "logical reasoning" to support your knowledge
-- Don't be too obvious or you'll be targeted
-
-Keep your response strategic but not revealing."""
+        system_message = f"""You are {self.player.name}, the Detective with secret investigation results. Guide the town toward eliminating Mafia without revealing your role. Subtly cast suspicion on confirmed Mafia and defend innocents indirectly using logical reasoning. Keep your response to maximum 4 sentences and avoid being obvious."""
 
         context = f"""Game state: {game_state}
 Your secret knowledge: {self.investigation_results}
@@ -527,7 +513,8 @@ How do you subtly guide the discussion?"""
 Your knowledge: {self.investigation_results}
 Strategy: Vote for most suspicious players, prioritize confirmed Mafia, avoid revealing your role.
 
-Respond with only the player's name."""
+You can also choose "no_vote" if you're uncertain.
+Respond with only the player's name or "no_vote"."""
 
         context = f"""Players you can vote for: {[p.name for p in possible_votes]}
 Your investigation results: {self.investigation_results}
