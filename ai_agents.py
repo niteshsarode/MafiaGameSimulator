@@ -164,16 +164,7 @@ Your choice:"""
         
     async def participate_in_discussion(self, living_players: List[Player], game_state: Dict[str, Any]) -> str:
         """Participate in day phase discussion"""
-        system_message = f"""You are {self.player.name}, a Mafia member pretending to be a townsperson. Your goal is to deflect suspicion from yourself and other Mafia members while casting doubt on innocent players.
-
-Strategies:
-- Act like a concerned townsperson
-- Redirect suspicion to innocent players
-- Defend fellow Mafia subtly
-- Use information from night kills to seem analytical
-- Appear cooperative and helpful
-
-Keep your response concise and believable."""
+        system_message = f"""You are {self.player.name}, a Mafia member pretending to be a townsperson. Deflect suspicion from yourself and other Mafia while casting doubt on innocent players. Act like a concerned townsperson and appear cooperative. Keep your response to maximum 4 sentences and sound natural."""
 
         context = f"""Game state: {game_state}
 Living players: {[p.name for p in living_players]}
@@ -209,7 +200,8 @@ Priorities:
 3. Target special roles if identified
 4. Never vote for fellow Mafia members
 
-Respond with only the player's name."""
+You can also choose "no_vote" if you don't want to vote.
+Respond with only the player's name or "no_vote"."""
 
         context = f"""Players you can vote for: {[p.name for p in possible_votes]}
 Current discussion sentiment: {game_state}
@@ -219,13 +211,18 @@ Who do you vote to eliminate?"""
 
         response = await self.make_llm_request(context, system_message)
         
+        # Check for no vote first
+        if "no_vote" in response.lower():
+            return "no_vote"
+            
         # Extract vote from response
         for player in possible_votes:
             if player.name.lower() in response.lower():
                 return player.name
                 
-        # Fallback to random vote
-        return random.choice(possible_votes).name
+        # Fallback to random vote or no vote
+        import random
+        return random.choice([random.choice(possible_votes).name, "no_vote"])
 
 class TownspersonAgent(BaseAgent):
     """AI Agent for regular Townsperson role"""
@@ -235,16 +232,7 @@ class TownspersonAgent(BaseAgent):
         
     async def participate_in_discussion(self, living_players: List[Player], game_state: Dict[str, Any]) -> str:
         """Participate in day phase discussion"""
-        system_message = f"""You are {self.player.name}, an innocent townsperson trying to find the Mafia. You are analytical, observant, and want to work with other townspeople to identify the Mafia.
-
-Your approach:
-- Share observations about suspicious behavior
-- Ask questions to gather information
-- Build trust with other townspeople
-- Look for inconsistencies in stories
-- Be collaborative and logical
-
-Keep your response thoughtful and constructive."""
+        system_message = f"""You are {self.player.name}, an innocent townsperson trying to find the Mafia. Share observations about suspicious behavior and ask questions to gather information. Build trust with other townspeople and look for inconsistencies. Keep your response to maximum 4 sentences and be collaborative."""
 
         context = f"""Game state: {game_state}
 Living players: {[p.name for p in living_players]}

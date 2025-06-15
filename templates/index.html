@@ -868,6 +868,189 @@
                 html += '</div>';
                 turnDetails.innerHTML = html;
             }
+            
+            updateGameHistory() {
+                const gameHistory = document.getElementById('gameHistory');
+                if (!this.gameState || !this.gameState.game_history || this.gameState.game_history.length === 0) {
+                    gameHistory.innerHTML = '<p class="text-muted">No game history available yet.</p>';
+                    return;
+                }
+                
+                gameHistory.innerHTML = '';
+                
+                this.gameState.game_history.forEach((round, index) => {
+                    const roundDiv = document.createElement('div');
+                    roundDiv.className = 'round-accordion';
+                    
+                    const roundId = `round-${round.round || index}`;
+                    const isLatest = index === this.gameState.game_history.length - 1;
+                    
+                    // Create round header
+                    const headerButton = document.createElement('button');
+                    headerButton.className = 'round-header';
+                    headerButton.onclick = () => this.toggleRound(roundId);
+                    
+                    const summary = this.generateRoundSummary(round);
+                    headerButton.innerHTML = `
+                        <div>
+                            <div class="round-title">Round ${round.round || index + 1} - ${round.phase || 'Unknown'}</div>
+                            <div class="round-summary">${summary}</div>
+                        </div>
+                        <span class="round-toggle ${isLatest ? '' : 'collapsed'}">▼</span>
+                    `;
+                    
+                    // Create round content
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = `round-content ${isLatest ? '' : 'collapsed'}`;
+                    contentDiv.id = roundId;
+                    contentDiv.style.display = isLatest ? 'block' : 'none';
+                    contentDiv.innerHTML = this.generateRoundContent(round);
+                    
+                    roundDiv.appendChild(headerButton);
+                    roundDiv.appendChild(contentDiv);
+                    gameHistory.appendChild(roundDiv);
+                });
+            }
+            
+            toggleRound(roundId) {
+                const content = document.getElementById(roundId);
+                const toggle = content.previousElementSibling.querySelector('.round-toggle');
+                
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    toggle.classList.remove('collapsed');
+                } else {
+                    content.style.display = 'none';
+                    toggle.classList.add('collapsed');
+                }
+            }
+            
+            generateRoundSummary(round) {
+                const livingCount = round.living_players ? round.living_players.length : 0;
+                const deadCount = round.dead_players ? round.dead_players.length : 0;
+                
+                if (round.phase === 'day' && round.game_state && round.game_state.current_votes) {
+                    const voteCount = Object.keys(round.game_state.current_votes).length;
+                    return `${livingCount} alive, ${deadCount} dead • ${voteCount} votes cast`;
+                } else if (round.phase === 'night') {
+                    return `${livingCount} alive, ${deadCount} dead • Night actions`;
+                }
+                
+                return `${livingCount} alive, ${deadCount} dead`;
+            }
+            
+            generateRoundContent(round) {
+                let html = '';
+                
+                // Round overview
+                html += `<div class="mb-3">
+                    <h6><i class="fas fa-info-circle"></i> Round Overview</h6>
+                    <p><strong>Phase:</strong> ${round.phase || 'Unknown'}</p>
+                    <p><strong>Living Players:</strong> ${round.living_players ? round.living_players.join(', ') : 'None'}</p>
+                    ${round.dead_players && round.dead_players.length > 0 ? 
+                        `<p><strong>Dead Players:</strong> ${round.dead_players.join(', ')}</p>` : ''}
+                </div>`;
+                
+                // Discussion section (for day phases)
+                if (round.discussions && round.discussions.length > 0) {
+                    html += '<div class="discussion-container">';
+                    html += '<h6><i class="fas fa-comments"></i> Discussion</h6>';
+                    
+                    round.discussions.forEach(discussion => {
+                        const roleBadge = this.getRoleBadge(discussion.player_role);
+                        html += `
+                            <div class="discussion-entry">
+                                <div class="discussion-player">
+                                    ${discussion.player_name}
+                                    ${roleBadge}
+                                </div>
+                                <div class="discussion-text">${discussion.message}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                }
+                
+                // Voting section
+                if (round.game_state && round.game_state.current_votes) {
+                    html += this.generateVotingSection(round.game_state.current_votes);
+                }
+                
+                // Night actions section
+                if (round.game_state && round.game_state.last_night_actions) {
+                    html += this.generateNightActionsSection(round.game_state.last_night_actions);
+                }
+                
+                return html;
+            }
+            
+            getRoleBadge(role) {
+                if (!role) return '';
+                
+                const roleClass = role.toLowerCase();
+                return `<span class="role-badge ${roleClass}">${role}</span>`;
+            }
+            
+            generateVotingSection(votes) {
+                let html = '<div class="vote-summary">';
+                html += '<h6><i class="fas fa-vote-yea"></i> Voting Results</h6>';
+                
+                const voteCounts = {};
+                Object.entries(votes).forEach(([voter, target]) => {
+                    if (target === 'no_vote') {
+                        voteCounts['No Vote'] = (voteCounts['No Vote'] || 0) + 1;
+                    } else {
+                        voteCounts[target] = (voteCounts[target] || 0) + 1;
+                    }
+                });
+                
+                Object.entries(voteCounts).forEach(([target, count]) => {
+                    html += `
+                        <div class="vote-item">
+                            <span>${target}</span>
+                            <span class="vote-count">${count}</span>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                return html;
+            }
+            
+            generateNightActionsSection(nightActions) {
+                let html = '<div class="mb-3">';
+                html += '<h6><i class="fas fa-moon"></i> Night Actions</h6>';
+                
+                if (nightActions.mafia_target) {
+                    html += `<p><strong>Mafia Target:</strong> ${nightActions.mafia_target}</p>`;
+                }
+                
+                if (nightActions.doctor_save) {
+                    html += `<p><strong>Doctor Save:</strong> ${nightActions.doctor_save}</p>`;
+                }
+                
+                if (nightActions.detective_investigation) {
+                    html += `<p><strong>Detective Investigation:</strong> ${nightActions.detective_investigation}</p>`;
+                }
+                
+                if (nightActions.results) {
+                    const results = nightActions.results;
+                    if (results.eliminated) {
+                        html += `<p><strong>Eliminated:</strong> ${results.eliminated}</p>`;
+                    }
+                    if (results.saved !== undefined) {
+                        html += `<p><strong>Save Successful:</strong> ${results.saved ? 'Yes' : 'No'}</p>`;
+                    }
+                    if (results.investigation_result) {
+                        const invResult = results.investigation_result;
+                        html += `<p><strong>Investigation:</strong> ${invResult.target} is ${invResult.is_mafia ? 'Mafia' : 'Town'}</p>`;
+                    }
+                }
+                
+                html += '</div>';
+                return html;
+            }
 
             addLogEntry(source, message, type = 'info') {
                 const gameLog = document.getElementById('gameLog');
