@@ -7,77 +7,101 @@ import asyncio
 import json
 import logging
 import threading
-from main import MafiaGameSimulation
-from config import GameConfig
+from turn_based_game import TurnBasedMafiaGame
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
 
 class WebGameController:
     def __init__(self):
-        self.current_simulation = None
+        self.turn_based_game = None
         self.game_running = False
-        self.game_state = {}
         
     def start_new_game(self):
-        """Start a new game simulation"""
-        if self.game_running:
-            return {"error": "Game already running"}
-            
+        """Start a new turn-based game"""
         try:
-            config = GameConfig()
-            self.current_simulation = MafiaGameSimulation(config)
+            self.turn_based_game = TurnBasedMafiaGame()
             
-            # Run simulation in background thread
-            def run_simulation():
+            # Initialize the game in a background thread
+            def initialize_game():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    loop.run_until_complete(self.current_simulation.run_simulation())
+                    result = loop.run_until_complete(self.turn_based_game.initialize_new_game())
+                    self.game_running = result.get("success", False)
                 finally:
                     loop.close()
-                    self.game_running = False
             
-            self.game_running = True
-            thread = threading.Thread(target=run_simulation)
+            thread = threading.Thread(target=initialize_game)
             thread.daemon = True
             thread.start()
+            thread.join()  # Wait for initialization to complete
             
-            return {"success": True, "message": "Game started"}
+            return {"success": True, "message": "Turn-based game initialized"}
         except Exception as e:
             logger.error(f"Failed to start game: {e}")
             return {"error": str(e)}
     
     def get_game_state(self):
         """Get current game state"""
-        if not self.current_simulation:
-            return {"error": "No active game"}
+        if not self.turn_based_game:
+            return {
+                "phase": "setup",
+                "round": 0,
+                "players": [],
+                "living_count": 0,
+                "mafia_count": 0,
+                "town_count": 0,
+                "is_game_over": False,
+                "winner": None,
+                "game_running": False,
+                "can_advance": False,
+                "current_turn": {},
+                "game_history": []
+            }
             
         try:
-            game = self.current_simulation.game
-            players_data = []
-            
-            for player in game.players:
-                players_data.append({
-                    "name": player.name,
-                    "role": player.role.value if player.role else "unknown",
-                    "alive": player.is_alive,
-                    "death_round": player.death_round
-                })
-            
-            return {
-                "phase": game.current_phase.value,
-                "round": game.current_round,
-                "players": players_data,
-                "living_count": len(game.get_living_players()),
-                "mafia_count": len(game.get_mafia_members()),
-                "town_count": len(game.get_townspeople()),
-                "is_game_over": game.is_game_over(),
-                "winner": game.get_winner(),
-                "game_running": self.game_running
-            }
+            return self.turn_based_game.get_game_state()
         except Exception as e:
             logger.error(f"Failed to get game state: {e}")
+            return {
+                "error": str(e),
+                "phase": "error",
+                "round": 0,
+                "players": [],
+                "living_count": 0,
+                "mafia_count": 0,
+                "town_count": 0,
+                "is_game_over": False,
+                "winner": None,
+                "game_running": False,
+                "can_advance": False,
+                "current_turn": {},
+                "game_history": []
+            }
+    
+    def execute_next_turn(self):
+        """Execute the next turn"""
+        if not self.turn_based_game:
+            return {"error": "No game initialized"}
+            
+        try:
+            def run_turn():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    return loop.run_until_complete(self.turn_based_game.execute_next_turn())
+                finally:
+                    loop.close()
+            
+            thread = threading.Thread(target=run_turn)
+            thread.daemon = True
+            thread.start()
+            thread.join()  # Wait for turn to complete
+            
+            return {"success": True, "message": "Turn executed"}
+        except Exception as e:
+            logger.error(f"Failed to execute turn: {e}")
             return {"error": str(e)}
 
 # Global game controller
@@ -92,6 +116,12 @@ def index():
 def start_game():
     """Start a new game"""
     result = game_controller.start_new_game()
+    return jsonify(result)
+
+@app.route('/api/next_turn', methods=['POST'])
+def next_turn():
+    """Execute the next turn"""
+    result = game_controller.execute_next_turn()
     return jsonify(result)
 
 @app.route('/api/game_state')

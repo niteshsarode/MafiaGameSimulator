@@ -222,6 +222,9 @@
                 <button class="btn btn-game" id="startGameBtn" onclick="startGame()">
                     <i class="fas fa-play"></i> Start New Game
                 </button>
+                <button class="btn btn-game" id="nextTurnBtn" onclick="nextTurn()" disabled>
+                    <i class="fas fa-step-forward"></i> Next Turn
+                </button>
                 <button class="btn btn-game" onclick="refreshGameState()">
                     <i class="fas fa-sync"></i> Refresh
                 </button>
@@ -240,6 +243,13 @@
                     <div class="game-log" id="gameLog">
                         <div class="log-entry">
                             <strong>System:</strong> Ready to start a new game...
+                        </div>
+                    </div>
+                    
+                    <div id="currentTurnInfo" style="display: none;">
+                        <h4><i class="fas fa-info-circle"></i> Current Turn</h4>
+                        <div class="stat-card" id="turnDetails">
+                            <!-- Turn details will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -279,7 +289,8 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        this.addLogEntry('System', 'New game started successfully!');
+                        this.addLogEntry('System', 'New turn-based game initialized!');
+                        this.refreshGameState();
                         this.startPolling();
                     } else {
                         this.addLogEntry('Error', result.error || 'Failed to start game');
@@ -289,6 +300,35 @@
                 } finally {
                     startBtn.disabled = false;
                     startBtn.innerHTML = '<i class="fas fa-play"></i> Start New Game';
+                }
+            }
+            
+            async nextTurn() {
+                const nextBtn = document.getElementById('nextTurnBtn');
+                nextBtn.disabled = true;
+                nextBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                
+                try {
+                    const response = await fetch('/api/next_turn', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.addLogEntry('System', 'Turn executed successfully!');
+                        this.refreshGameState();
+                    } else {
+                        this.addLogEntry('Error', result.error || 'Failed to execute turn');
+                    }
+                } catch (error) {
+                    this.addLogEntry('Error', 'Failed to communicate with server');
+                } finally {
+                    nextBtn.disabled = false;
+                    nextBtn.innerHTML = '<i class="fas fa-step-forward"></i> Next Turn';
                 }
             }
             

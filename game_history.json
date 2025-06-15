@@ -3,87 +3,42 @@
     "round": 1,
     "phase": "night",
     "living_players": [
+      "Alice",
       "Bob",
       "Charlie",
-      "Eve",
+      "Diana",
       "Frank",
       "Grace",
       "Henry"
     ],
     "dead_players": [
-      "Alice",
-      "Diana"
+      "Eve"
     ],
     "game_state": {
       "phase": "night",
       "round": 2,
-      "living_players": 6,
-      "dead_players": 2,
+      "living_players": 7,
+      "dead_players": 1,
       "mafia_count": 2,
-      "townspeople_count": 4,
+      "townspeople_count": 5,
       "is_game_over": false,
       "winner": null,
       "current_votes": {
-        "Bob": "Frank",
-        "Charlie": "Henry",
+        "Alice": "Henry",
+        "Charlie": "Diana",
+        "Diana": "Bob",
+        "Eve": "Charlie",
         "Frank": "Alice",
-        "Grace": "Alice",
-        "Henry": "Charlie"
+        "Grace": "Eve"
       },
       "last_night_actions": {
         "round": 1,
-        "mafia_target": "Diana",
-        "doctor_save": "Alice",
-        "detective_investigation": "Bob",
-        "results": {
-          "eliminated": "Diana",
-          "saved": false,
-          "investigation_result": {
-            "target": "Bob",
-            "is_mafia": true
-          }
-        }
-      }
-    }
-  },
-  {
-    "round": 2,
-    "phase": "night",
-    "living_players": [
-      "Bob",
-      "Charlie",
-      "Eve",
-      "Frank"
-    ],
-    "dead_players": [
-      "Alice",
-      "Diana",
-      "Grace",
-      "Henry"
-    ],
-    "game_state": {
-      "phase": "night",
-      "round": 3,
-      "living_players": 4,
-      "dead_players": 4,
-      "mafia_count": 1,
-      "townspeople_count": 3,
-      "is_game_over": false,
-      "winner": null,
-      "current_votes": {
-        "Bob": "Frank",
-        "Charlie": "Henry",
-        "Frank": "Henry",
-        "Henry": "Charlie"
-      },
-      "last_night_actions": {
-        "round": 2,
-        "mafia_target": "Grace",
-        "doctor_save": null,
+        "mafia_target": "Henry",
+        "doctor_save": "Henry",
         "detective_investigation": "Frank",
         "results": {
-          "eliminated": "Grace",
-          "saved": false,
+          "eliminated": null,
+          "saved": true,
           "investigation_result": {
             "target": "Frank",
             "is_mafia": false
@@ -93,40 +48,87 @@
     }
   },
   {
+    "round": 2,
+    "phase": "night",
+    "living_players": [
+      "Alice",
+      "Bob",
+      "Frank",
+      "Grace",
+      "Henry"
+    ],
+    "dead_players": [
+      "Charlie",
+      "Diana",
+      "Eve"
+    ],
+    "game_state": {
+      "phase": "night",
+      "round": 3,
+      "living_players": 5,
+      "dead_players": 3,
+      "mafia_count": 1,
+      "townspeople_count": 4,
+      "is_game_over": false,
+      "winner": null,
+      "current_votes": {
+        "Alice": "Bob",
+        "Charlie": "Frank",
+        "Frank": "Charlie",
+        "Grace": "Henry"
+      },
+      "last_night_actions": {
+        "round": 2,
+        "mafia_target": "Diana",
+        "doctor_save": "Henry",
+        "detective_investigation": "Charlie",
+        "results": {
+          "eliminated": "Diana",
+          "saved": false,
+          "investigation_result": {
+            "target": "Charlie",
+            "is_mafia": true
+          }
+        }
+      }
+    }
+  },
+  {
     "round": 3,
     "phase": "night",
     "living_players": [
-      "Bob",
-      "Frank"
+      "Alice",
+      "Grace",
+      "Henry"
     ],
     "dead_players": [
-      "Alice",
+      "Bob",
       "Charlie",
       "Diana",
       "Eve",
-      "Grace",
-      "Henry"
+      "Frank"
     ],
     "game_state": {
       "phase": "night",
       "round": 4,
-      "living_players": 2,
-      "dead_players": 6,
+      "living_players": 3,
+      "dead_players": 5,
       "mafia_count": 1,
-      "townspeople_count": 1,
-      "is_game_over": true,
-      "winner": "Mafia",
+      "townspeople_count": 2,
+      "is_game_over": false,
+      "winner": null,
       "current_votes": {
-        "Bob": "Frank",
-        "Frank": "Eve"
+        "Alice": "Frank",
+        "Frank": "Grace",
+        "Grace": "Frank"
       },
       "last_night_actions": {
         "round": 3,
-        "mafia_target": "Charlie",
-        "doctor_save": null,
+        "mafia_target": "Bob",
+        "doctor_save": "Henry",
         "detective_investigation": "Frank",
         "results": {
-          "eliminated": "Charlie",
+          "eliminated": "Bob",
           "saved": false,
           "investigation_result": {
             "target": "Frank",
