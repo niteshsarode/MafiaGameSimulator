@@ -656,25 +656,32 @@
                     for (const [key, value] of Object.entries(turnData.results)) {
                         if (value !== null && value !== undefined) {
                             let displayValue;
-                            if (key === 'votes' && typeof value === 'object' && value !== null) {
-                                // Handle votes object formatting
+                            // Special handling for votes to prevent [object Object]
+                            if (key.toLowerCase().includes('vote') && typeof value === 'object' && value !== null) {
+                                console.log('Formatting votes:', key, value); // Debug log
                                 if (Array.isArray(value)) {
-                                    // If votes is an array
                                     displayValue = value.length > 0 ? value.join(', ') : 'No votes';
                                 } else {
-                                    // If votes is an object with voter->target mapping
-                                    const voteEntries = Object.entries(value);
-                                    if (voteEntries.length > 0) {
-                                        displayValue = voteEntries.map(([voter, target]) => 
-                                            `${voter} → ${target}`
-                                        ).join(', ');
-                                    } else {
-                                        displayValue = 'No votes';
+                                    try {
+                                        const entries = Object.entries(value);
+                                        if (entries.length > 0) {
+                                            displayValue = entries.map(([voter, target]) => 
+                                                `${voter} → ${target}`
+                                            ).join(', ');
+                                        } else {
+                                            displayValue = 'No votes cast';
+                                        }
+                                    } catch (e) {
+                                        displayValue = `Vote data: ${JSON.stringify(value)}`;
                                     }
                                 }
                             } else if (typeof value === 'object' && value !== null) {
-                                // For other objects, show formatted JSON
-                                displayValue = JSON.stringify(value, null, 2);
+                                // For other objects, show key information or formatted JSON
+                                if (Object.keys(value).length === 0) {
+                                    displayValue = 'None';
+                                } else {
+                                    displayValue = JSON.stringify(value, null, 2);
+                                }
                             } else {
                                 displayValue = value || 'None';
                             }
