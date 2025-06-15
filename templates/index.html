@@ -335,6 +335,11 @@
             async refreshGameState() {
                 try {
                     const response = await fetch('/api/game_state');
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
                     const gameState = await response.json();
                     
                     if (!gameState.error) {
@@ -343,7 +348,8 @@
                         this.addLogEntry('Error', gameState.error);
                     }
                 } catch (error) {
-                    this.addLogEntry('Error', 'Failed to fetch game state');
+                    console.error('Game state fetch error:', error);
+                    this.addLogEntry('Error', `Failed to fetch game state: ${error.message}`);
                 }
             }
             
