@@ -26,7 +26,8 @@ class BaseAgent:
         if api_key and api_key != "test_key":
             try:
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.model = genai.GenerativeModel(
+                    'gemini-2.5-flash-preview-05-20')
                 self.use_ai = True
             except Exception as e:
                 logger.warning(f"Failed to configure Gemini API: {e}")
@@ -88,39 +89,45 @@ class BaseAgent:
         """Build context from previous voting patterns and round history"""
         if 'game_history' not in game_state or not game_state['game_history']:
             return "No previous voting history available."
-        
+
         context_parts = []
         voting_patterns = {}
-        
+
         for round_data in game_state['game_history']:
-            if round_data.get('phase') == 'day' and 'actions' in round_data and 'votes' in round_data['actions']:
+            if round_data.get(
+                    'phase'
+            ) == 'day' and 'actions' in round_data and 'votes' in round_data[
+                    'actions']:
                 round_num = round_data.get('round', 0)
                 votes = round_data['actions']['votes']
-                
+
                 context_parts.append(f"Round {round_num} votes:")
                 for voter, target in votes.items():
                     context_parts.append(f"  {voter} -> {target}")
-                    
+
                     # Track voting patterns
                     if voter not in voting_patterns:
                         voting_patterns[voter] = []
                     voting_patterns[voter].append(target)
-                
+
                 # Add elimination result if available
-                if 'results' in round_data and 'eliminated' in round_data['results']:
+                if 'results' in round_data and 'eliminated' in round_data[
+                        'results']:
                     eliminated = round_data['results']['eliminated']
                     context_parts.append(f"  Eliminated: {eliminated}")
-                
+
                 context_parts.append("")
-        
+
         # Add voting pattern analysis
         if voting_patterns:
             context_parts.append("Voting patterns analysis:")
             for player, targets in voting_patterns.items():
                 if len(targets) > 1:
-                    context_parts.append(f"  {player} has voted for: {', '.join(targets)}")
-        
-        return "\n".join(context_parts) if context_parts else "No voting history available."
+                    context_parts.append(
+                        f"  {player} has voted for: {', '.join(targets)}")
+
+        return "\n".join(
+            context_parts) if context_parts else "No voting history available."
 
 
 class MafiaAgent(BaseAgent):
@@ -213,7 +220,7 @@ Your choice:"""
                                         game_state: Dict[str, Any]) -> str:
         """Participate in day phase discussion"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         system_message = f"""You are {self.player.name}, a Mafia member pretending to be a townsperson. Deflect suspicion from yourself and other Mafia while casting doubt on innocent players. Use voting patterns to identify threats and deflect suspicion. Act like a concerned townsperson and appear cooperative. Keep your response to maximum 4 sentences and sound natural."""
 
         context = f"""Game state: {game_state}
@@ -238,7 +245,7 @@ Based on voting patterns and previous rounds, what do you want to say in the dis
                                    game_state: Dict[str, Any]) -> str:
         """Vote for a player to eliminate"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         # Don't vote for fellow Mafia members
         possible_votes = [
             p for p in living_players
@@ -296,7 +303,7 @@ class TownspersonAgent(BaseAgent):
                                         game_state: Dict[str, Any]) -> str:
         """Participate in day phase discussion"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         system_message = f"""You are {self.player.name}, an innocent townsperson trying to find the Mafia. Share observations about suspicious behavior and ask questions to gather information. Use voting patterns to identify suspicious alliances and inconsistencies. Build trust with other townspeople and look for inconsistencies. Keep your response to maximum 4 sentences and be collaborative."""
 
         context = f"""Game state: {game_state}
@@ -322,7 +329,7 @@ Based on voting patterns and behavior, what do you want to contribute to the dis
                                    game_state: Dict[str, Any]) -> str:
         """Vote for a player to eliminate"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         possible_votes = [
             p.name for p in living_players if p.name != self.player.name
         ]
@@ -431,7 +438,7 @@ Who do you choose to save tonight?"""
                                         game_state: Dict[str, Any]) -> str:
         """Participate in discussion while hiding role"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         system_message = f"""You are {self.player.name}, the Doctor, but you must hide your role. Act like a concerned townsperson while subtly protecting the town. Use voting patterns to identify threats to town and special roles. Support logical analysis and protect suspected special roles indirectly. Keep your response to maximum 4 sentences and avoid suspicion."""
 
         context = f"""Game state: {game_state}
@@ -456,7 +463,7 @@ Based on voting patterns and threats to town, what do you say in the discussion 
                                    game_state: Dict[str, Any]) -> str:
         """Vote for a player to eliminate while hiding role"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         possible_votes = [
             p for p in living_players if p.name != self.player.name
         ]
@@ -591,7 +598,7 @@ Who do you choose to investigate tonight?"""
                                         game_state: Dict[str, Any]) -> str:
         """Participate in discussion using investigation knowledge"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         system_message = f"""You are {self.player.name}, the Detective with secret investigation results. Guide the town toward eliminating Mafia. Use voting patterns combined with your investigation knowledge to build stronger cases. Subtly cast suspicion on confirmed Mafia and defend innocents indirectly using logical reasoning. Keep your response to maximum 4 sentences."""
 
         context = f"""Game state: {game_state}
@@ -616,7 +623,7 @@ Using your investigation results and voting patterns, how do you subtly guide th
                                    game_state: Dict[str, Any]) -> str:
         """Vote based on investigation results"""
         voting_history = self.build_voting_history_context(game_state)
-        
+
         possible_votes = [
             p for p in living_players if p.name != self.player.name
         ]
