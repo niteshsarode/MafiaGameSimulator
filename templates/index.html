@@ -670,19 +670,27 @@
         
         // Global functions
         function startGame() {
-            gameInterface.startGame();
+            if (window.gameInterface) {
+                window.gameInterface.startGame();
+            }
         }
         
         function nextTurn() {
-            gameInterface.nextTurn();
+            if (window.gameInterface) {
+                window.gameInterface.nextTurn();
+            }
         }
         
         function refreshGameState() {
-            gameInterface.refreshGameState();
+            if (window.gameInterface) {
+                window.gameInterface.refreshGameState();
+            }
         }
         
-        // Initialize the interface
-        const gameInterface = new MafiaGameInterface();
+        // Initialize the interface when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            window.gameInterface = new MafiaGameInterface();
+        });
     </script>
 </body>
 </html>
