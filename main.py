@@ -180,16 +180,31 @@ class MafiaGameSimulation:
         """Save current game state to history"""
         state = {
             'round': len(self.game_state_history) + 1,
-            'phase': self.game.current_phase,
+            'phase': self.game.current_phase.value if hasattr(self.game.current_phase, 'value') else str(self.game.current_phase),
             'living_players': [p.name for p in self.game.get_living_players()],
             'dead_players': [p.name for p in self.game.get_dead_players()],
-            'game_state': self.game.get_game_state()
+            'game_state': self.serialize_game_state(self.game.get_game_state())
         }
         self.game_state_history.append(state)
         
         # Save to file
-        with open('game_history.json', 'w') as f:
-            json.dump(self.game_state_history, f, indent=2)
+        try:
+            with open('game_history.json', 'w') as f:
+                json.dump(self.game_state_history, f, indent=2, default=str)
+        except Exception as e:
+            logger.warning(f"Could not save game history: {e}")
+            
+    def serialize_game_state(self, game_state):
+        """Convert game state to JSON-serializable format"""
+        serialized = {}
+        for key, value in game_state.items():
+            if hasattr(value, 'value'):  # Enum
+                serialized[key] = value.value
+            elif isinstance(value, dict):
+                serialized[key] = {k: v.value if hasattr(v, 'value') else v for k, v in value.items()}
+            else:
+                serialized[key] = value
+        return serialized
             
     async def cleanup(self):
         """Clean up resources"""

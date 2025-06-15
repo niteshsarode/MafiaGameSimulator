@@ -8,12 +8,10 @@ import json
 import logging
 import random
 from typing import Dict, List, Optional, Any, Tuple
-from openai import OpenAI
+import google.generativeai as genai
 import os
 from models import Player, Role
 
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-# do not change this unless explicitly requested by the user
 logger = logging.getLogger(__name__)
 
 class BaseAgent:
@@ -22,26 +20,39 @@ class BaseAgent:
     def __init__(self, player: Player, personality: str):
         self.player = player
         self.personality = personality
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "default_key"))
+        # Configure Gemini API - use a fallback key for testing
+        api_key = os.getenv("GEMINI_API_KEY", "test_key")
+        if api_key and api_key != "test_key":
+            try:
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-pro')
+                self.use_ai = True
+            except Exception as e:
+                logger.warning(f"Failed to configure Gemini API: {e}")
+                self.model = None
+                self.use_ai = False
+        else:
+            self.model = None
+            self.use_ai = False
         self.memory = []  # Store conversation history
         self.suspicions = {}  # Track suspicions of other players
         
     async def make_llm_request(self, prompt: str, system_message: str = None) -> str:
         """Make a request to the LLM with error handling"""
+        if not self.use_ai or not self.model:
+            return self.get_fallback_response(prompt)
+            
         try:
-            messages = []
+            # Combine system message and prompt for Gemini
+            full_prompt = prompt
             if system_message:
-                messages.append({"role": "system", "content": system_message})
-            messages.append({"role": "user", "content": prompt})
+                full_prompt = f"{system_message}\n\n{prompt}"
             
             response = await asyncio.to_thread(
-                self.openai_client.chat.completions.create,
-                model="gpt-4o",
-                messages=messages,
-                max_tokens=500,
-                temperature=0.7
+                self.model.generate_content,
+                full_prompt
             )
-            return response.choices[0].message.content
+            return response.text if response.text else self.get_fallback_response(prompt)
         except Exception as e:
             logger.error(f"LLM request failed for {self.player.name}: {e}")
             return self.get_fallback_response(prompt)

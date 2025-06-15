@@ -7,38 +7,49 @@ import asyncio
 import logging
 import random
 from typing import Dict, List, Optional, Any
-from openai import OpenAI
+import google.generativeai as genai
 import os
 from models import Player, Phase, GameEvent
 
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-# do not change this unless explicitly requested by the user
 logger = logging.getLogger(__name__)
 
 class GameNarrator:
     """AI-powered game narrator for dramatic storytelling"""
     
     def __init__(self):
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "default_key"))
+        # Configure Gemini API - use fallback if not available
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        if api_key:
+            try:
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-pro')
+                self.use_ai = True
+            except Exception as e:
+                logger.warning(f"Failed to configure Gemini API: {e}")
+                self.model = None
+                self.use_ai = False
+        else:
+            self.model = None
+            self.use_ai = False
         self.narrative_style = "dramatic_mysterious"
         self.story_elements = []
         
     async def make_llm_request(self, prompt: str, system_message: str = None) -> str:
         """Make a request to the LLM for narrative generation"""
+        if not self.use_ai or not self.model:
+            return self.get_fallback_narration(prompt)
+            
         try:
-            messages = []
+            # Combine system message and prompt for Gemini
+            full_prompt = prompt
             if system_message:
-                messages.append({"role": "system", "content": system_message})
-            messages.append({"role": "user", "content": prompt})
+                full_prompt = f"{system_message}\n\n{prompt}"
             
             response = await asyncio.to_thread(
-                self.openai_client.chat.completions.create,
-                model="gpt-4o",
-                messages=messages,
-                max_tokens=300,
-                temperature=0.8  # Higher temperature for more creative narration
+                self.model.generate_content,
+                full_prompt
             )
-            return response.choices[0].message.content
+            return response.text if response.text else self.get_fallback_narration(prompt)
         except Exception as e:
             logger.error(f"Narrator LLM request failed: {e}")
             return self.get_fallback_narration(prompt)
