@@ -382,6 +382,45 @@ What do you say in the discussion?"""
         
         return response
 
+    async def vote_for_elimination(self, living_players: List[Player], game_state: Dict[str, Any]) -> str:
+        """Vote for a player to eliminate while hiding role"""
+        possible_votes = [p for p in living_players if p.name != self.player.name]
+        
+        if not possible_votes:
+            return ""
+            
+        system_message = f"""You are {self.player.name}, the Doctor, voting to eliminate someone. You must hide your role and act like a regular townsperson.
+
+Your strategy:
+- Vote to eliminate suspected Mafia members
+- Don't reveal you're the Doctor
+- Support logical town decisions
+- Protect the town's interests
+
+Respond with only the player's name."""
+
+        context = f"""Players you can vote for: {[p.name for p in possible_votes]}
+Current discussion sentiment: {game_state}
+Your suspicions: {self.suspicions}
+
+Who do you vote to eliminate?"""
+
+        try:
+            response = await self.make_llm_request(context, system_message)
+            
+            # Extract vote from response
+            for player in possible_votes:
+                if player.name.lower() in response.lower():
+                    return player.name
+                    
+            # Fallback to random vote
+            import random
+            return random.choice(possible_votes).name
+        except Exception as e:
+            logger.error(f"Error in doctor voting: {e}")
+            import random
+            return random.choice(possible_votes).name
+
 class DetectiveAgent(BaseAgent):
     """AI Agent for Detective role"""
     
@@ -484,15 +523,45 @@ How do you subtly guide the discussion?"""
         
     async def vote_for_elimination(self, living_players: List[Player], game_state: Dict[str, Any]) -> str:
         """Vote based on investigation results"""
-        possible_votes = [p.name for p in living_players if p.name != self.player.name]
+        possible_votes = [p for p in living_players if p.name != self.player.name]
+        
+        if not possible_votes:
+            return ""
         
         # Vote for confirmed Mafia first
         for player_name, is_mafia in self.investigation_results.items():
-            if is_mafia and player_name in possible_votes:
+            if is_mafia and player_name in [p.name for p in possible_votes]:
                 return player_name
                 
-        # Otherwise vote like a regular townsperson
-        return await super().vote_for_elimination(living_players, game_state)
+        # Otherwise vote strategically using detective knowledge
+        system_message = f"""You are {self.player.name}, the Detective with secret investigation knowledge. Vote strategically to eliminate Mafia.
+
+Your knowledge: {self.investigation_results}
+Strategy: Vote for most suspicious players, prioritize confirmed Mafia, avoid revealing your role.
+
+Respond with only the player's name."""
+
+        context = f"""Players you can vote for: {[p.name for p in possible_votes]}
+Your investigation results: {self.investigation_results}
+Game state: {game_state}
+
+Who do you vote to eliminate?"""
+
+        try:
+            response = await self.make_llm_request(context, system_message)
+            
+            # Extract vote from response
+            for player in possible_votes:
+                if player.name.lower() in response.lower():
+                    return player.name
+                    
+            # Fallback to random vote
+            import random
+            return random.choice(possible_votes).name
+        except Exception as e:
+            logger.error(f"Error in detective voting: {e}")
+            import random
+            return random.choice(possible_votes).name
 
 class AgentManager:
     """Manages all AI agents in the game"""
