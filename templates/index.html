@@ -656,16 +656,27 @@
                     for (const [key, value] of Object.entries(turnData.results)) {
                         if (value !== null && value !== undefined) {
                             let displayValue;
-                            if (key === 'votes' && typeof value === 'object') {
-                                // Format votes as "Player: Voted for Target"
-                                const voteEntries = Object.entries(value).map(([voter, target]) => 
-                                    `${voter} → ${target}`
-                                ).join(', ');
-                                displayValue = voteEntries || 'No votes';
-                            } else if (typeof value === 'object') {
+                            if (key === 'votes' && typeof value === 'object' && value !== null) {
+                                // Handle votes object formatting
+                                if (Array.isArray(value)) {
+                                    // If votes is an array
+                                    displayValue = value.length > 0 ? value.join(', ') : 'No votes';
+                                } else {
+                                    // If votes is an object with voter->target mapping
+                                    const voteEntries = Object.entries(value);
+                                    if (voteEntries.length > 0) {
+                                        displayValue = voteEntries.map(([voter, target]) => 
+                                            `${voter} → ${target}`
+                                        ).join(', ');
+                                    } else {
+                                        displayValue = 'No votes';
+                                    }
+                                }
+                            } else if (typeof value === 'object' && value !== null) {
+                                // For other objects, show formatted JSON
                                 displayValue = JSON.stringify(value, null, 2);
                             } else {
-                                displayValue = value;
+                                displayValue = value || 'None';
                             }
                             html += `<li><strong>${key.replace('_', ' ')}:</strong> ${displayValue}</li>`;
                         }
