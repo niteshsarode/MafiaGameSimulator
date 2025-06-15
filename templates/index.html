@@ -43,18 +43,19 @@
         
         .player-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
             margin: 20px 0;
         }
         
         .player-card {
             background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 12px;
             text-align: center;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            font-size: 0.9rem;
         }
         
         .player-card:hover {
@@ -88,8 +89,8 @@
         }
         
         .role-icon {
-            font-size: 2em;
-            margin-bottom: 10px;
+            font-size: 1.5em;
+            margin-bottom: 8px;
             display: block;
         }
         
@@ -206,6 +207,15 @@
             font-weight: normal;
         }
         
+        .turn-content {
+            color: #333;
+        }
+        
+        .turn-content p {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
         .turn-content h6 {
             color: #495057;
             margin-top: 15px;
@@ -224,6 +234,11 @@
         .turn-content li {
             margin-bottom: 5px;
             font-size: 0.9rem;
+            color: #495057;
+        }
+        
+        .turn-content strong {
+            color: #212529;
         }
     </style>
 </head>
@@ -481,12 +496,18 @@
             }
             
             updatePhaseIndicator() {
+                // Wait for DOM to be ready
+                if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
+                    setTimeout(() => this.updatePhaseIndicator(), 100);
+                    return;
+                }
+                
                 const phaseText = document.getElementById('phaseText');
                 const roundText = document.getElementById('roundText');
                 const phaseIndicator = document.getElementById('phaseIndicator');
                 
                 if (!phaseText || !roundText || !phaseIndicator) {
-                    console.error('Phase indicator elements not found');
+                    // Silently return instead of logging error repeatedly
                     return;
                 }
                 
