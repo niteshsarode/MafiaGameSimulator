@@ -525,18 +525,22 @@ Who do you vote to eliminate?"""
         try:
             response = await self.make_llm_request(context, system_message)
             
+            # Check for no vote first
+            if "no_vote" in response.lower():
+                return "no_vote"
+                
             # Extract vote from response
             for player in possible_votes:
                 if player.name.lower() in response.lower():
                     return player.name
                     
-            # Fallback to random vote
+            # Fallback to random vote or no vote
             import random
-            return random.choice(possible_votes).name
+            return random.choice([p.name for p in possible_votes] + ["no_vote"])
         except Exception as e:
             logger.error(f"Error in detective voting: {e}")
             import random
-            return random.choice(possible_votes).name
+            return random.choice([p.name for p in possible_votes] + ["no_vote"])
 
 class AgentManager:
     """Manages all AI agents in the game"""
